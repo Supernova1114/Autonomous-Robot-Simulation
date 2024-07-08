@@ -17,8 +17,6 @@ public class LidarModule2D : MonoBehaviour
     Quaternion lidarRotation;
     Vector3 lidarForward;
 
-    string output;
-
     void Start()
     {
         rangeList = new float[2, Mathf.CeilToInt(360 / angleStepResolution)];
@@ -32,7 +30,7 @@ public class LidarModule2D : MonoBehaviour
 
     void Update()
     {
-        /*output = "";
+        /*string output = "";
         for (int i = 229; i < 239; i++)
         {
             output += rangeList[i] + " ";

@@ -6,7 +6,7 @@ public class MapPainter : MonoBehaviour
 {
     [SerializeField] private Mapper mapper;
 
-    private float[,] map;
+    private short[,] map;
 
     public RenderTexture renderTexture; // renderTextuer that you will be rendering stuff on
     public Renderer renderer; // renderer in which you will apply changed texture
@@ -34,12 +34,14 @@ public class MapPainter : MonoBehaviour
         {
             for (int j = 0; j < map.GetLength(1); j++)
             {
-                texture.SetPixel(i, j, new Color(map[i, j], 0, 0));
-
-                if (mapper.GetMapCenter().x == j && mapper.GetMapCenter().x == i)
-                    texture.SetPixel(i, j, new Color(0, 0, 1));
+                texture.SetPixel(i, j, new Color(1 - map[i, j], 0, 0));
             }
         }
+
+        texture.SetPixel((int)mapper.GetMapCenter().x, (int)mapper.GetMapCenter().x, new Color(0, 0, 1)); // Current Pos
+        Vector2 targetPos = -mapper.GetMapTargetPos();
+        texture.SetPixel((int)targetPos.x, (int)targetPos.y, new Color(1, 1, 0));
+
         texture.Apply();
         RenderTexture.active = null; //don't forget to set it back to null once you finished playing with it. 
     }
