@@ -4,6 +4,8 @@ Simulation of an autonomously navigating robot.
 Author: Cameron Rosenthal @Supernova1114
 <br>
 
-Path planning uses A-Star implementation from: https://github.com/valantonini/AStar
+### Notes
+- Robot uses a simulated 2D LIDAR module for mapping.
+- Path planning uses A-Star implementation from: https://github.com/valantonini/AStar
 
 ![](repo-images/navigation.gif)
