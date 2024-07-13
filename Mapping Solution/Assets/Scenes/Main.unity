@@ -576,7 +576,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &406205864
 Transform:
   m_ObjectHideFlags: 0
@@ -1424,7 +1424,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &938064127
 Transform:
   m_ObjectHideFlags: 0
@@ -1986,7 +1986,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!23 &1470802145
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2491,7 +2491,8 @@ MonoBehaviour:
   lidarModule: {fileID: 1927208171}
   clearMapInterval: 0.5
   mapResolutionFactor: 5
-  currentPosition: {fileID: 1277555559}
+  robotTransform: {fileID: 1277555559}
+  robotBaseTransform: {fileID: 1106079243}
   targetPosition: {fileID: 1209201169}
   robotSpeed: 1
 --- !u!1 &1927208167

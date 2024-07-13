@@ -11,11 +11,13 @@ public class Mapper : MonoBehaviour
     [SerializeField] private LidarModule2D lidarModule;
     [SerializeField] private float clearMapInterval;
     [SerializeField] private int mapResolutionFactor = 10;
-    [SerializeField] private Transform currentPosition;
+    [SerializeField] private Transform robotTransform;
+    [SerializeField] private Transform robotBaseTransform;
     [SerializeField] private Transform targetPosition;
     [SerializeField] private float robotSpeed;
 
     private Vector2 targetVelocity;
+    private Quaternion targetRotation;
 
     private Vector2 mapTargetPosCeil;
 
@@ -90,7 +92,7 @@ public class Mapper : MonoBehaviour
 
        
 
-        Vector2 currentPos = new Vector2(currentPosition.position.x, currentPosition.position.z);
+        Vector2 currentPos = new Vector2(robotTransform.position.x, robotTransform.position.z);
         Vector2 targetPos = new Vector2(targetPosition.position.x, targetPosition.position.z);
 
         //Debug.DrawRay(new Vector3(targetPos.x, 1, targetPos.y), Vector3.right * 0.1f, Color.green, 0.01f);
@@ -125,8 +127,12 @@ public class Mapper : MonoBehaviour
             {
                 targetVelocity = (worldPath[1] - worldPath[0]).normalized;
                 // Temp
-                currentPosition.position += new Vector3(targetVelocity.x, 0, targetVelocity.y) * robotSpeed * Time.deltaTime;
+                robotTransform.position += new Vector3(targetVelocity.x, 0, targetVelocity.y) * robotSpeed * Time.deltaTime;
+
+                targetRotation = Quaternion.LookRotation(new Vector3(targetVelocity.x, 0, targetVelocity.y), robotBaseTransform.up);
             }
+
+            robotBaseTransform.rotation = Quaternion.Slerp(robotBaseTransform.rotation, targetRotation, 0.05f);
         }
 
         /*// Debug map print output
