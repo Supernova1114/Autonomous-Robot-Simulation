@@ -38,9 +38,9 @@ public class MapPainter : MonoBehaviour
             }
         }
 
-        texture.SetPixel((int)mapper.GetMapCenter().x, (int)mapper.GetMapCenter().x, new Color(0, 0, 1)); // Current Pos
-        Vector2 targetPos = -mapper.GetMapTargetPos();
-        texture.SetPixel((int)targetPos.x, (int)targetPos.y, new Color(1, 1, 0));
+        //texture.SetPixel((int)mapper.GetMapCenter().x, (int)mapper.GetMapCenter().x, new Color(0, 0, 1)); // Current Pos
+        //Vector2 targetPos = -mapper.GetMapTargetPos();
+        //texture.SetPixel((int)targetPos.x, (int)targetPos.y, new Color(1, 1, 0));
 
         texture.Apply();
         RenderTexture.active = null; //don't forget to set it back to null once you finished playing with it. 
