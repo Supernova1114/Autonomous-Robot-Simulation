@@ -28,6 +28,8 @@ public class Mapper : MonoBehaviour
 
     private float lastMapClearTime = 0;
 
+    private int maxRaySizeCeil;
+
     PathFinderOptions pathfinderOptions = new PathFinderOptions
     {
         PunishChangeDirection = true,
@@ -38,7 +40,7 @@ public class Mapper : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        int maxRaySizeCeil = Mathf.CeilToInt(lidarModule.GetMaxRayDistance());
+        maxRaySizeCeil = Mathf.CeilToInt(lidarModule.GetMaxRayDistance());
 
         mapCenter = mapResolutionFactor * maxRaySizeCeil * Vector2.one;
 
@@ -64,33 +66,97 @@ public class Mapper : MonoBehaviour
         for (int i = 0; i < rangeList.GetLength(1); i++)
         {
             float range = rangeList[1, i];
+            float angle = (rangeList[0, i] + 270) % 360 * Mathf.Deg2Rad;
 
             if (range == Mathf.Infinity)
-                continue;
-
-            range *= mapResolutionFactor;
-
-            float angle = (rangeList[0, i] + 270) * Mathf.Deg2Rad;
-
-            int y = Mathf.CeilToInt(Mathf.Sin(angle) * range) + (int)mapCenter.y - 1;
-            int x = Mathf.CeilToInt(Mathf.Cos(angle) * range) + (int)mapCenter.x - 1;
-
-            // Add blocked cell (and extra padding)
-            for (int r = y - 2; r <= y + 2; r++)
             {
-                for (int c = x - 2; c <= x + 2; c++)
+                // Raytrace clear cells
+
+                range = maxRaySizeCeil * mapResolutionFactor;
+
+                float slope = Mathf.Tan(angle);
+                //print(slope); 
+
+                //float slope = (Mathf.Sin(angle) * range) / (Mathf.Cos(angle) * range);
+
+
+                float linePercent = 0;
+
+                while (linePercent < 1)
                 {
-                    if (r < map2D.GetLength(0) && r >= 0 && c < map2D.GetLength(1) && c >= 0)
+                    int sideSwitch;
+                    int bruh;
+
+                    if (angle >= 0 && angle < Mathf.PI / 2)
                     {
-                        map2D[r, c] = 0;
+                        sideSwitch = -1;
+                        bruh = 1;
+                    }
+                    else if (angle >= Mathf.PI / 2 && angle < Mathf.PI)
+                    {
+                        sideSwitch = 1;
+                        bruh = 1;
+                    }
+                    else if (angle >= Mathf.PI && angle < Mathf.PI * 3 / 2)
+                    {
+                        sideSwitch = 1;
+                        bruh = -1;
+                    }
+                    else
+                    {
+                        sideSwitch = -1;
+                        bruh = -1;
+                    }
+
+                    // Create parametric equation of line
+                    int x = Mathf.CeilToInt(linePercent * range * -sideSwitch * 1) + (int)mapCenter.x - 1;
+                    int y = Mathf.CeilToInt(linePercent * Mathf.Abs(slope) * range * bruh * 1) + (int)mapCenter.y - 1;
+
+
+
+                    for (int r = y - 2; r <= y + 2; r++)
+                    {
+                        for (int c = x - 2; c <= x + 2; c++)
+                        {
+                            if (r < map2D.GetLength(0) && r >= 0 && c < map2D.GetLength(1) && c >= 0)
+                            {
+                                map2D[r, c] = 1;
+                            }
+                        }
+                    }
+
+                    linePercent += 0.05f;
+                }
+
+
+
+
+            }
+            else
+            {
+                // Add blocked cell (and extra padding)
+
+                range *= mapResolutionFactor;
+
+                int y = Mathf.CeilToInt(Mathf.Sin(angle) * range) + (int)mapCenter.y - 1;
+                int x = Mathf.CeilToInt(Mathf.Cos(angle) * range) + (int)mapCenter.x - 1;
+
+                for (int r = y - 2; r <= y + 2; r++)
+                {
+                    for (int c = x - 2; c <= x + 2; c++)
+                    {
+                        if (r < map2D.GetLength(0) && r >= 0 && c < map2D.GetLength(1) && c >= 0)
+                        {
+                            map2D[r, c] = 0;
+                        }
                     }
                 }
             }
+
+            
         }
 
-        // TODO - add a raytrace map clearer
-
-       
+        return;
 
         Vector2 currentPos = new Vector2(robotTransform.position.x, robotTransform.position.z);
         Vector2 targetPos = new Vector2(targetPosition.position.x, targetPosition.position.z);
@@ -135,8 +201,8 @@ public class Mapper : MonoBehaviour
             robotBaseTransform.rotation = Quaternion.Slerp(robotBaseTransform.rotation, targetRotation, 0.05f);
         }
 
-        /*// Debug map print output
-        string output = "";
+        // Debug map print output
+        /*string output = "";
 
         for (int i = 0; i < map2D.GetLength(0); i++)
         {
@@ -145,25 +211,26 @@ public class Mapper : MonoBehaviour
                 output += map2D[i, j] + " ";
             }
             output += "\n";
-        }
+        }*/
 
         //print(output);
-        Debug.Log(output);*/
-
-
+        //Debug.Log(output);
         // Clear map
-        if (Time.time - lastMapClearTime > clearMapInterval)
+
+        /*if (Time.time - lastMapClearTime > clearMapInterval)
         {
-            for (int i = 0; i < map2D.GetLength(0); i++)
+            
+
+            *//*for (int i = 0; i < map2D.GetLength(0); i++)
             {
                 for (int j = 0; j < map2D.GetLength(1); j++)
                 {
                     map2D[i, j] = 1; // Open Cell
                 }
-            }
+            }*//*
 
             lastMapClearTime = Time.time;
-        }
+        }*/
     }
 
     public Vector2 GetMapCenter()

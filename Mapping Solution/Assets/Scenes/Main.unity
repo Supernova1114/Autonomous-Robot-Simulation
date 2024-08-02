@@ -576,7 +576,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &406205864
 Transform:
   m_ObjectHideFlags: 0
@@ -1424,7 +1424,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &938064127
 Transform:
   m_ObjectHideFlags: 0
@@ -1677,7 +1677,7 @@ Transform:
   m_GameObject: {fileID: 1209201168}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4.56, y: 18.3, z: -1.68}
+  m_LocalPosition: {x: 2.28, y: 18.3, z: -13.26}
   m_LocalScale: {x: 0.5, y: 0.2, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1842,7 +1842,7 @@ Transform:
   m_GameObject: {fileID: 1277555558}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.28022003, y: 0.612, z: 2.9955425}
+  m_LocalPosition: {x: 1.35, y: 0.612, z: 1.87}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -2490,7 +2490,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lidarModule: {fileID: 1927208171}
-  clearMapInterval: 0.5
+  clearMapInterval: 0.005
   mapResolutionFactor: 5
   robotTransform: {fileID: 1277555559}
   robotBaseTransform: {fileID: 1106079243}
