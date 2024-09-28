@@ -17,9 +17,12 @@ public class Mapper : MonoBehaviour
     [SerializeField] private Transform robotBaseTransform;
     [SerializeField] private Transform targetPosition;
     [SerializeField] private float robotSpeed;
+    [SerializeField] private float rotationSpeed;
+    [SerializeField] private float plannerInterval;
 
-    private Vector2 targetVelocity;
     private Quaternion targetRotation;
+
+    private float robotToTargetRotationDelta = 0;
 
     private Vector2 mapTargetPosCeil;
 
@@ -43,8 +46,17 @@ public class Mapper : MonoBehaviour
 
     List<short> mapRowTemp;
 
-    Vector2[] points;
+    Vector2[] points = new Vector2[200];
 
+    private float lastPlanTime = 0;
+
+    private int successfulPoints = 0;
+
+    private bool needToReplan = true;
+
+    private Vector3 subpointPos;
+    private Vector3 targetVelocity;
+    private bool recalculateSubpoint;
 
     // Start is called before the first frame update
     void Start()
@@ -95,14 +107,14 @@ public class Mapper : MonoBehaviour
 
                 range = maxRaySizeCeil * mapResolutionFactor;
 
-                //RayTraceClearCells(angle, range);
+                RayTraceClearCells(angle, range);
             }
             else
             {
                 // Add blocked cell (and extra padding)
                 range *= mapResolutionFactor;
 
-                //RayTraceClearCells(angle, maxRaySizeCeil * mapResolutionFactor);
+                RayTraceClearCells(angle, maxRaySizeCeil * mapResolutionFactor);
 
                 int y = Mathf.CeilToInt(Mathf.Sin(angle) * range) + (int)mapCenter.y - 1;
                 int x = Mathf.CeilToInt(Mathf.Cos(angle) * range) + (int)mapCenter.x - 1;
@@ -195,78 +207,126 @@ public class Mapper : MonoBehaviour
         int currX = Mathf.CeilToInt(mapCenter.x);
         int currY = Mathf.CeilToInt(mapCenter.y);
         int robotRadiusMap = Mathf.CeilToInt(1.12f * mapResolutionFactor);
-        
-        points = new Vector2[200];
 
-        for (int step = 0; step < points.Length; step++)
+
+        if (needToReplan == true)
         {
-            /*if (CircleCollisionCheck(currX, currY - 1, robotRadiusMap) == false)
+            for (int step = 0; step < points.Length; step++)
             {
-                currY--;
-                points[step] = new Vector2(currX, currY);
-                PrintPath(currX, currY, 1);
-            }
-            else*/
-
-            float rightMag = 0;
-            float leftMag = 0;
-
-            int rightCount = 0;
-            int leftCount = 0;
-
-            for (int i = 0; i < rangeList.GetLength(1); i++)
-            {
-                float range = rangeList[1, i];
-                float angle = (rangeList[0, i] + 270) % 360;
-
-                if (range != Mathf.Infinity)
+                if (CircleCollisionCheck(currX, currY - 1, robotRadiusMap) == false)
                 {
-                    if (angle >= 270 && angle < 360)
+                    currY--;
+
+                    points[step].Set(currX, currY);
+                    //PrintPath(currX, currY, 1);
+                }
+                else
+                {
+                    float rightMag = 0;
+                    float leftMag = 0;
+
+                    int rightCount = 0;
+                    int leftCount = 0;
+
+                    for (int i = 0; i < rangeList.GetLength(1); i++)
                     {
-                        rightMag += range;
-                        rightCount++;
+                        float range = rangeList[1, i];
+                        float angle = (rangeList[0, i] + 270) % 360;
+
+                        if (range != Mathf.Infinity)
+                        {
+                            if (angle >= 270 && angle < 360)
+                            {
+                                rightMag += range;
+                                rightCount++;
+                            }
+                            else if (angle >= 180 && angle < 270)
+                            {
+                                leftMag += range;
+                                leftCount++;
+                            }
+                        }
                     }
-                    else if (angle >= 180 && angle < 270)
+
+                    float leftAvg;
+                    float rightAvg;
+
+                    print("L: " + leftCount + " | R: " + rightCount);
+
+                    leftAvg = leftCount == 0 ? 0 : leftMag / leftCount;
+                    rightAvg = rightCount == 0 ? 0 : rightMag / rightCount;
+
+                    int dir = leftAvg < rightAvg ? 1 : -1;
+
+                    if (CircleCollisionCheck(currX + dir, currY, robotRadiusMap) == false)
                     {
-                        leftMag += range;
-                        leftCount++;
+                        currX += dir;
+
+                        points[step].Set(currX, currY);
+                        //PrintPath(currX, currY, 1);
+                    }
+                    else
+                    {
+                        currX -= dir;
+                        currY += 1;
                     }
                 }
-            }
 
-            float leftAvg;
-            float rightAvg;
 
-            leftAvg = leftCount == 0 ? 0 : leftMag / leftCount;
-            rightAvg = rightCount == 0 ? 0 : rightMag / rightCount;
-
-            int dir = leftAvg < rightAvg ? 1 : -1;
-
-            print("L: " + leftAvg + " | R: " + rightAvg);
-
-            if (CircleCollisionCheck(currX + dir, currY, robotRadiusMap) == false)
-            {
-                currX += dir;
-                points[step] = new Vector2(currX, currY);
-                PrintPath(currX, currY, 1);
-            }
-            else
-            {
-                currX -= dir;
-                currY += 5;
             }
         }
+        
 
-        if (mapTargetPos.magnitude > 3)
+        if ((targetPosition.position - robotTransform.position).magnitude > 1) // Check if at goal
         {
-            if (points.Length >= 11)
+            Vector3 robotPosXZ = new Vector3(robotTransform.position.x, 0, robotTransform.position.z);
+
+            if (recalculateSubpoint)
             {
-                targetVelocity = (points[10] - points[0]).normalized;
-                robotTransform.position += new Vector3(targetVelocity.y, 0, targetVelocity.x) * robotSpeed * Time.deltaTime;
-                targetRotation = Quaternion.LookRotation(new Vector3(targetVelocity.x, 0, -targetVelocity.y), robotTransform.up);
+                recalculateSubpoint = false;
+
+                // Convert waypoint to worldspace, then relative to robot.
+
+                Vector2 waypoint = points[5];
+                waypoint.Set(waypoint.x, waypoint.y);
+
+                Vector2 worldWaypoint = (waypoint - mapCenter) / mapResolutionFactor;
+                Vector3 worldWaypointXZ = new Vector3(worldWaypoint.x, 0, worldWaypoint.y);
+
+
+                Vector3 towardsGoal = targetPosition.position - robotPosXZ;
+                Vector3 towardsGoalXZ = new Vector3(towardsGoal.x, 0, towardsGoal.z);
+
+                Vector3 rotatedVector = Quaternion.LookRotation(-1 * towardsGoalXZ, Vector3.up) * worldWaypointXZ;
+                Vector3 rotatedVectorXZ = new Vector3(rotatedVector.x, 0, rotatedVector.z);
+
+                Vector3 reflectedVector = Vector3.Reflect(rotatedVectorXZ, towardsGoalXZ.normalized);
+                // XZ this?
+
+                subpointPos = -1 * (reflectedVector - robotPosXZ);
             }
 
-            robotTransform.rotation = Quaternion.Slerp(robotTransform.rotation, targetRotation, 0.05f);
+            // Set target velocity and target rotation
+
+            Vector3 targetVelocity = (subpointPos - robotPosXZ).normalized;
+
+            targetRotation = Quaternion.LookRotation(targetVelocity, robotTransform.up);
+            robotTransform.rotation = Quaternion.RotateTowards(robotTransform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+
+            float angleDelta = Mathf.Abs(targetRotation.eulerAngles.y - robotTransform.eulerAngles.y);
+            float distToSubpoint = (subpointPos - robotPosXZ).magnitude;
+
+            if (distToSubpoint < 0.1f) // Made it to subpoint
+            {
+                recalculateSubpoint = true;
+            }
+            else if (angleDelta < 5)
+            {
+                robotTransform.position += targetVelocity * robotSpeed * Time.deltaTime;
+            }
+
+            Debug.DrawRay(subpointPos, Vector3.right * 0.5f, Color.green, 0.1f);
+            Debug.DrawRay(robotTransform.position, targetVelocity * 2, Color.blue, 0.1f);
         }
 
     }
@@ -362,7 +422,7 @@ public class Mapper : MonoBehaviour
 
             if (worldPath.Length >= 2)
             {
-                targetVelocity = (worldPath[1] - worldPath[0]).normalized;
+                Vector3 targetVelocity = (worldPath[1] - worldPath[0]).normalized;
                 // Temp
                 //robotTransform.position += new Vector3(targetVelocity.x, 0, targetVelocity.y) * robotSpeed * Time.deltaTime;
                 robotTransform.position += new Vector3(targetVelocity.x, 0, targetVelocity.y) * robotSpeed * Time.deltaTime;
