@@ -15,6 +15,9 @@ public class RobotMovement : MonoBehaviour
 
     float[,] rangeList;
 
+    private bool pleaseAvoid = false;
+    private bool pleaseGoToFreeSpace = false;
+
     void Start()
     {
     }
@@ -26,6 +29,12 @@ public class RobotMovement : MonoBehaviour
 
         Vector3 avoidanceVector = Vector3.zero;
 
+        float totalAnglesInf = 0;
+        int anglesCountInf = 0;
+
+        pleaseAvoid = false;
+        pleaseGoToFreeSpace = false;
+
         for (int i = 0; i < rangeList.GetLength(1); i++)
         {
             float range = rangeList[1, i];
@@ -33,36 +42,51 @@ public class RobotMovement : MonoBehaviour
 
             if ((angle >= 270 && angle < 360) || (angle >= 180 && angle < 270))
             {
-                if (range != Mathf.Infinity && range < safeDistanceThresh)
+                
+                
+                if (range != Mathf.Infinity)
                 {
-                    float radianAngle = angle * Mathf.Deg2Rad;
-                    Vector3 direction = Quaternion.LookRotation(transform.forward, transform.up) * new Vector3(-Mathf.Cos(radianAngle), 0, -Mathf.Sin(radianAngle));
-                    Vector3 laserDirection =Vector3.Reflect(direction, transform.right);
-                    
-                    //Debug.DrawRay(transform.position + Vector3.up, laserDirection.normalized * range, Color.green, 0.1f);
+                    if (range < safeDistanceThresh)
+                    {
+                        pleaseAvoid = true;
 
-                    avoidanceVector += laserDirection; // need div by 0 check?
+                        float radianAngle = angle * Mathf.Deg2Rad;
+                        Vector3 direction = Quaternion.LookRotation(transform.forward, transform.up) * new Vector3(-Mathf.Cos(radianAngle), 0, -Mathf.Sin(radianAngle));
+                        Vector3 laserDirection = Vector3.Reflect(direction, transform.right);
+
+                        //Debug.DrawRay(transform.position + Vector3.up, laserDirection.normalized * range, Color.green, 0.1f);
+
+                        avoidanceVector += laserDirection;
+                    }
+                    else
+                    {
+                        pleaseGoToFreeSpace = true;
+                    }
+
+                }
+                else
+                {
+                    totalAnglesInf += angle;
+                    anglesCountInf++;
                 }
             }
 
-
-            /* // Get total dist and valid range count for front facing half.
-             if (range != Mathf.Infinity && range < safeDistanceThresh)
-             {
-                 if ((angle >= 270 && angle < 360) || (angle >= 180 && angle < 270))
-                 {
-                     float radianAngle = angle * Mathf.Deg2Rad;
-                     Vector3 direction = new Vector3(Mathf.Cos(radianAngle), 0, Mathf.Sin(radianAngle));
-                     avoidanceVector += direction; // need div by 0 check?
-                 }
-             }*/
         } // for
+
+        float anglesInfAvg = anglesCountInf == 0 ? 0 : totalAnglesInf / anglesCountInf;
+        //
+
+        // test
+
+        float radianAngle2 = anglesInfAvg * Mathf.Deg2Rad;
+        Vector3 direction2 = Quaternion.LookRotation(transform.forward, transform.up) * new Vector3(-Mathf.Cos(radianAngle2), 0, -Mathf.Sin(radianAngle2));
+        Vector3 laserDirection2 = Vector3.Reflect(direction2, transform.right);
+
 
         avoidanceVector *= -1;
 
         //Vector3 reflectedVec = Vector3.Reflect(avoidanceVector, transform.forward);
 
-        Debug.DrawRay(transform.position, avoidanceVector.normalized, Color.blue, 0.1f);
 
 
 
@@ -71,22 +95,51 @@ public class RobotMovement : MonoBehaviour
 
         Quaternion targetRotation;
 
-        if (avoidanceVector == Vector3.zero)
+
+
+        if (pleaseAvoid == true)
         {
-            targetRotation = Quaternion.LookRotation(towardsWaypointXZ, transform.up);
+            targetRotation = Quaternion.LookRotation(avoidanceVector, transform.up);
+            pleaseAvoid = false;
+
+        }
+        else if (pleaseGoToFreeSpace == true)
+        {
+            targetRotation = Quaternion.LookRotation(laserDirection2, transform.up);
+            pleaseGoToFreeSpace = false;
         }
         else
         {
-            targetRotation = Quaternion.LookRotation(avoidanceVector, transform.up);
+            targetRotation = Quaternion.LookRotation(towardsWaypointXZ, transform.up);
         }
 
 
-        Vector3 targetVelocity = transform.forward * moveSpeed;
+
+        /*if (pleaseGoToFreeSpace == true)
+        {
+            targetRotation = Quaternion.LookRotation(laserDirection2, transform.up);
+        }
+        else
+        {
+            targetRotation = Quaternion.LookRotation(towardsWaypointXZ, transform.up);
+        }*/
+
+        Debug.DrawRay(transform.position, targetRotation * Vector3.forward, Color.blue, 0.1f);
+
+
+        Vector3 targetVelocity = transform.forward * moveSpeed;//
+
 
         if (towardsWaypointXZ.magnitude > 1)
         {
             transform.position += targetVelocity * Time.deltaTime;
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+
+            float targetRotationDelta = Mathf.Abs(targetRotation.eulerAngles.y - transform.eulerAngles.y);
+
+            if (true)
+            {
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            }
         }
 
         //float targetRotationDelta = Mathf.Abs(targetRotation.eulerAngles.y - transform.eulerAngles.y);
