@@ -9,5 +9,8 @@ Author: Cameron Rosenthal @Supernova1114
 - Lidar ranging data is fed into a map, which a path planner then runs against.
 - Path planning uses an A-Star implementation from: https://github.com/valantonini/AStar
 
+# New improvements being tested:
+https://youtu.be/HtbmhMs_dQk?si=Of1G35uVCwFAjkB1
+
 ### Preview
 ![](repo-images/navigation.gif)
