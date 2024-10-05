@@ -1,5 +1,6 @@
 # Mapping-Solution
-Simulation of an autonomously navigating robot. WIP
+Simulation of an autonomously navigating robot.
+This is a WIP project used for experimentation.
 <br>
 Author: Cameron Rosenthal @Supernova1114
 <br>
