@@ -1,4 +1,4 @@
-# Mapping-Solution
+# Autonomous-Robot-Simulation
 Simulation of an autonomously navigating robot.
 This is a WIP project used for experimentation.
 <br>
